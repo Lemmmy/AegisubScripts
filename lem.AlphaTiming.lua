@@ -16,10 +16,12 @@ TODO:
 - Version using karaoke timing tags instead of markers + manual splitting
 ]]
 
-local script_name        = "Alpha timing"
-local script_description = "Replaces markers in the selected lines with alpha timing"
-local script_author      = "Lemmmy"
-local script_version     = "1.0"
+script_name        = "Alpha timing"
+script_description = "Replaces markers in the selected lines with alpha timing"
+script_author      = "Lemmmy"
+script_version     = "1.0"
+
+local script_dir = ": Lemmmy :/"
 
 local function alpha_timing(subtitles, selection)
   for i = 1, #selection do
@@ -42,7 +44,7 @@ local function alpha_timing(subtitles, selection)
     subtitles[selection[i]] = line
   end
 
-  aegisub.set_undo_point("Alpha timing")
+  aegisub.set_undo_point(script_name)
   return selection -- Keep the initial selection
 end
 
@@ -50,5 +52,8 @@ local function alpha_timing_validation(subtitles, selection, active)
   return #selection > 1
 end
 
-aegisub.register_macro(script_name, script_description, alpha_timing, alpha_timing_validation)
+aegisub.register_macro(
+  script_dir .. script_name, script_description, 
+  alpha_timing, alpha_timing_validation
+)
 
