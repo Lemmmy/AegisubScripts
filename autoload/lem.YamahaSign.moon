@@ -11,6 +11,7 @@ require "karaskel"
 
 lem = require "lem.util"
 { :pos, :rect, :clip, :alpha_lerp, :clean_tags, :remove_pos, :make_basic_line } = lem
+{ :setup_yamaha_sign } = require "lem.yamaha"
 
 sign_x      = 97
 sign_y      = 165
@@ -108,7 +109,7 @@ make_scale_frames = (subs, f_start, f_end, t_end, sign_width, descent, clean_tex
 
 make_yamaha_sign = (subs, selection) ->
   -- Config dialog
-  conf = setup_yamaha_sign subs
+  conf = setup_yamaha_sign subs, def_height
   return if not conf
 
   -- Prepare karaskel stuff
