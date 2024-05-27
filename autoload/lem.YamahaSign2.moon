@@ -1,9 +1,3 @@
-import concat, insert from table
-import floor, pow, max, sin, cos, pi, sqrt from math
-
-util = require "aegisub.util"
-require "karaskel"
-
 export script_name        = "Yamaha sign 2"
 export script_description = "Silly animated sign for a specific video"
 export script_author      = "Lemmmy"
@@ -11,8 +5,17 @@ export script_version     = "1.0"
 
 script_dir = ": Lemmmy :/"
 
+import concat, insert from table
+import floor, pow, max, sin, cos, pi, sqrt from math
+
+util = require "aegisub.util"
+require "karaskel"
+
+lem = require "lem.util"
+{ :pos, :rect, :clip, :alpha_lerp, :clean_tags, :remove_pos, :make_basic_line } = lem
+
 sign_x      = 97
-sign_y      = 175
+sign_y      = 165
 sign_height = 92
 pad         = 16
 blur        = 0.6
@@ -34,73 +37,7 @@ scale_offset  = -2
 bg2_offset    = 6
 bg2_fade_f    = 5 -- number of frames to fade bg2 in/out for
 
-pos = (x, y) ->
-  "\\pos(#{x},#{y})"
-rect = (x1, y1, x2, y2) ->
-  "m #{x1} #{y1} l #{x2} #{y1} l #{x2} #{y2} l #{x1} #{y2} l #{x1} #{y1}"
-clip = (x1, y1, x2, y2) ->
-  "\\clip(#{x1},#{y1},#{x2},#{y2})"
-alpha_lerp = (i) ->
-  "\\alpha#{util.interpolate_alpha i, "&HFF&", "&H00&"}"
-
-clean_tags = (text) ->
-  text\gsub "{}", ""
-remove_pos = (text) ->
-  clean_tags text\gsub "\\pos%([%d%.]+,%s*[%d%.]+%)", ""
-
-ease_in_out_sine  = (x) -> (1 - cos(x * pi)) / 2
-ease_in_out_quad  = (x) -> if x < 0.5 then 2 * x^2 else 1 - (-2 * x + 2)^2 / 2
-ease_in_out_cubic = (x) -> if x < 0.5 then 4 * x^3 else 1 - (-2 * x + 2)^3 / 2
-ease_in_out_quart = (x) -> if x < 0.5 then 8 * x^4 else 1 - (-2 * x + 2)^4 / 2
-ease_in_out_quint = (x) -> if x < 0.5 then 16 * x^5 else 1 - (-2 * x + 2)^5 / 2
-ease_in_out_expo  = (x) -> if x == 0 then 0 else if x == 1 then 1 else if x < 0.5 then 2^(20 * x - 10) / 2 else (2 - 2^(-20 * x + 10)) / 2
-ease_in_out_circ  = (x) -> if x < 0.5 then (1 - sqrt(1 - pow(2 * x, 2))) / 2 else (sqrt(1 - pow(-2 * x + 2, 2)) + 1) / 2
-ease_fn = ease_in_out_quint
-
-make_line = -> {
-  actor: "",
-  class: "dialogue",
-  comment: false,
-  effect: "",
-  start_time: 0,
-  end_time: 5000,
-  layer: 0,
-  margin_l: 0,
-  margin_r: 0,
-  margin_t: 0,
-  section: "[Events]",
-  style: "Default",
-  text: "",
-  extra: {}
-}
-
-make_basic_line = (text, start_time, end_time, style) ->
-  with make_line!
-    .text = text
-    .start_time = start_time
-    .end_time = end_time
-    .style = style
-
--- https://github.com/TypesettingTools/arch1t3cht-Aegisub-Scripts/blob/7eac78b382ae93e54e867a7bd95d2de9653c2936/macros/arch.ConvertFolds.moon#L21-L28
-fold_key = "_aegi_folddata"
-parse_line_fold = (line) ->
-  return if not line.extra
-
-  info = line.extra[fold_key]
-  return if not info
-
-  side, collapsed, id = info\match("^(%d+);(%d+);(%d+)$")
-  return { :side, :collapsed, :id }
-
--- Parse the extradata section of the subtitle file to find the highest fold id, or return 0 if none is found
-find_highest_fold_id = (subs) ->
-  fold_id = 0
-
-  for i, line in ipairs subs
-    fold = parse_line_fold line
-    fold_id = max fold_id, (fold.id or 0) if fold
-
-  fold_id
+ease_fn = lem.ease_yamaha
 
 make_swipe_frames = (subs, f_start, f_end, sign_width, descent, clean_text, reverse) ->
   frames = max f_end - f_start - 1, 1
@@ -172,12 +109,8 @@ make_scale_frames = (subs, f_start, f_end, t_end, sign_width, descent, clean_tex
     text_y = sign_y + (((sign_height - descent) * lerp_scale) / 2) + text_y_off + all_eased_offset
     text_scale = lerp_scale * 100
     main_text = "{#{blur_t}#{pos text_x, text_y}\\fscx#{text_scale}\\fscy#{text_scale}}#{clean_text}"
-
-    -- If this is the last line, add the ending fold data (TODO: Move this to the last line of the script)
-    fold_data = if i >= frames then "1;1;#{fold_id}" else nil
     subs.append with make_basic_line main_text, i_start, i_end, text_style
       .layer = 2
-      .extra = { [fold_key]: fold_data } if fold_data
 
 make_yamaha_sign = (subs, selection) ->
   -- Prepare karaskel stuff
@@ -194,14 +127,11 @@ make_yamaha_sign = (subs, selection) ->
 
   t_start, t_end = line.start_time, line.end_time
 
-  subs.delete(i) -- Remove the existing line
+  subs.delete i -- Remove the existing line
 
   -- Insert a comment line to mark the start of the sign, with fold data to easily hide it
   -- (folds require arch1t3cht's Aegisub fork)
-  fold_id = (find_highest_fold_id subs) + 1
-  subs.append with make_basic_line "Start Yamaha sign: #{clean_text}", t_start, t_end, text_style
-    .comment = true
-    .extra = { [fold_key]: "0;1;#{fold_id}" }
+  fold_id = lem.insert_fold_line subs, "Start Yamaha sign: #{clean_text}", t_start, t_end, text_style
 
   -- Initial swipe-in animation
   f_start, f_end = aegisub.frame_from_ms(t_start), aegisub.frame_from_ms(t_start + swipe_time)
@@ -223,9 +153,7 @@ make_yamaha_sign = (subs, selection) ->
   make_swipe_frames subs, f_start, f_end, sign_width, descent, clean_text, true
 
   -- Insert a final comment line to mark the end of the sign, and the ending fold
-  subs.append with make_basic_line "End Yamaha sign: #{clean_text}", t_end, t_end, text_style
-    .comment = true
-    .extra = { [fold_key]: "1;1;#{fold_id}" }
+  lem.insert_fold_line subs, "End Yamaha sign: #{clean_text}", t_end, t_end, text_style, fold_id
 
   -- Done
   aegisub.set_undo_point script_name
@@ -234,5 +162,3 @@ make_yamaha_sign_validation = (subs, selection, active) ->
   #selection == 1
 
 aegisub.register_macro script_dir .. script_name, script_description, make_yamaha_sign, make_yamaha_sign_validation
-
-
