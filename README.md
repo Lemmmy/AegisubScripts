@@ -1,14 +1,16 @@
 Collection of ridiculous Aegisub scripts for incredibly specific tasks. May bite. No refunds.
 
 # Alpha Timing
-Replaces markers (`{}`) in the selected lines with alpha timing. Similar to, but simpler than, Masquerade's Alpha Time/Alpha Text scripts, which are probably way better than this.
+Replaces markers (`{}`) or karaoke timing tags in the selected lines with alpha timing.
 
-Instructions:
+Instructions (marker mode):
 - In the line you want to alpha-time, put markers `{}` where you want the alpha timing to be. For example: `Next{} e{}pi{}sode`
 - Split the line into two or more lines, where you want each timing point to be, e.g. using Ctrl+D.
 - Run the script
 
-TODO: make it use a single line with karaoke timing tags
+Instructions (karaoke mode, only works on a single line):
+- In the line you want to alpha-time, put karaoke timing tags where you want the alpha timing to be. For example: `{\k50}Next{\k50} e{\k50}pi{\k50}sode`
+- Run the script
 
 # Chorus
 Takes two or more identical dialogue lines with different styles, and overlaps them stacked vertically:
