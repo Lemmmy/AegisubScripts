@@ -5,9 +5,6 @@ export script_version     = "1.0"
 
 script_dir = ": Lemmmy :/"
 
-import concat, insert from table
-import floor, pow, max, sin, cos, pi, sqrt from math
-
 util = require "aegisub.util"
 require "karaskel"
 

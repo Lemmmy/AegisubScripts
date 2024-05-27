@@ -5,14 +5,12 @@ export script_version     = "1.0"
 
 script_dir = ": Lemmmy :/"
 
-import concat, insert from table
-import floor, pow, max, sin, cos, pi, sqrt from math
-
+import max from math
 util = require "aegisub.util"
 require "karaskel"
 
 lem = require "lem.util"
-{ :pos, :rect, :clip, :alpha_lerp, :clean_tags, :remove_pos, :parse_pos, :make_basic_line } = lem
+{ :pos, :rect, :clean_tags, :remove_pos, :parse_pos, :make_basic_line } = lem
 
 sign_x      = 97
 sign_y      = 165
@@ -20,17 +18,13 @@ sign_height = 92
 pad         = 24
 blur        = 0.6
 blur_t      = "\\blur(#{blur})"
-fsp_start   = 50
 
 bg_style   = "Top box bg1"
 text_style = "Top box text"
 
-swipe_time    = 1200
-text_end_time = 1000
-text_accel    = 0.4
-text_move_n   = 10
-text_x_off    = -3.5
-text_y_off    = 3
+swipe_time = 1200
+text_x_off = -3.5
+text_y_off = 3
 
 make_ease = (subs, f_start, f_end, t_end, y, sign_width, descent, clean_text, ease_fn) ->
   frames = max f_end - f_start - 1, 1

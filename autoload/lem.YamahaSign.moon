@@ -1,9 +1,3 @@
-import concat, insert from table
-import floor, pow from math
-
-util = require "aegisub.util"
-require "karaskel"
-
 export script_name        = "Yamaha sign"
 export script_description = "Silly animated sign for a specific video"
 export script_author      = "Lemmmy"
@@ -11,129 +5,158 @@ export script_version     = "1.0"
 
 script_dir = ": Lemmmy :/"
 
+import max from math
+util = require "aegisub.util"
+require "karaskel"
+
+lem = require "lem.util"
+{ :pos, :rect, :clip, :alpha_lerp, :clean_tags, :remove_pos, :make_basic_line } = lem
+
 sign_x      = 97
-sign_y      = 259
+sign_y      = 165
 sign_height = 92
-pad         = 15
+pad         = 16
 blur        = 0.6
-blur_pad    = blur * 2 -- Added onto all clips to ensure the blur is visible
+blur_t      = "\\blur(#{blur})"
 
-br1_times = {
-  { start_time: 0  , end_time: 200 , end_width: 0.05, accel: 2.0 },
-  { start_time: 200, end_time: 700 , end_width: 0.85, accel: 1.2 },
-  { start_time: 700, end_time: 1200, end_width: 1.00, accel: 0.7 }
-}
+bg1_style  = "Top box bg1"
+bg2_style  = "Top box bg2"
+text_style = "Top box text"
 
+swipe_time    = 1200
 text_end_time = 1000
-text_accel = 0.4
-text_move_n = 10
-text_y_off = 3
+text_accel    = 0.4
+text_move_n   = 10
+text_x_off    = -3
+text_y_off    = 3
+scale         = 0.85
+scale_time    = 500
+scale_offset  = -2
+bg2_offset    = 6
+bg2_fade_f    = 5 -- number of frames to fade bg2 in/out for
 
-pos = (x, y) ->
-  "\\pos(#{x},#{y})"
-rect = (x1, y1, x2, y2) ->
-  "m #{x1} #{y1} l #{x2} #{y1} l #{x2} #{y2} l #{x1} #{y2} l #{x1} #{y1}"
-clip = (x1, y1, x2, y2) ->
-  "\\clip(#{x1},#{y1},#{x2},#{y2})"
-temp_time = (t1, t2, accel, s) ->
-  "\\temp_time(#{t1},#{t2},#{accel},#{s})"
-time = (t1, t2, accel, s) ->
-  "\\t(#{t1},#{t2},#{accel},#{s})"
-anim_time = (tbl, x1, y1, x2, y2) ->
-  temp_time tbl.start_time, tbl.end_time, tbl.accel, clip(x1, y1, interpolate(tbl.end_width, x1, x2), y2)
-move = (x1, y1, x2, y2, t1, t2) ->
-  "\\move(#{x1},#{y1},#{x2},#{y2},#{t1},#{t2})"
+ease_fn = lem.ease_yamaha
 
--- Replace \temp_time tags with \t tags, where the start and end times have been adjusted by `offset`
-normalize_temp_times = (str, offset) ->
-  str\gsub "\\temp_time%(([%d%.]+),%s*([%d%.]+),", (s1, s2) ->
-    t1, t2 = tonumber(s1), tonumber(s2)
-    t1 += offset
-    t2 += offset
-    "\\t(#{t1},#{t2},"
+make_swipe_frames = (subs, f_start, f_end, sign_width, descent, clean_text, reverse) ->
+  frames = max f_end - f_start - 1, 1
+  for i = 1, frames
+    progress = (if reverse then frames - i else i) / frames
+    i_start, i_end = aegisub.ms_from_frame(f_start + i), aegisub.ms_from_frame(f_start + i + 1)
 
--- Accelerated move - split the line into `n` lines to simulate accelerated movement according to `accel`
--- `accel` follows `pow((t - t1) / (t2 - t1), accel)` where `t` is the current time
-accel_move = (line, x1, y1, x2, y2, t1, t2, accel, n) ->
-  line_start, line_end = line.start_time, line.end_time
-  t_start, x = t1, x1
+    -- Background rectangle - width grows
+    lerp_width = (ease_fn progress) * sign_width
+    bg1_rect = rect sign_x, sign_y, sign_x + lerp_width, sign_y + sign_height
+    bg1_text = "{#{blur_t}#{pos 0, 0}\\p1}#{bg1_rect}"
+    subs.append with make_basic_line bg1_text, i_start, i_end, bg1_style
+      .layer = 1
 
-  lines = {}
-  for i = 1, n
-    t_end = interpolate i / n, t1, t2
+    -- Text - slides in from 60% right to left, clipped by the rectangle's bounds
+    text_start = sign_width * 0.6
+    text_x = (sign_x + pad + text_start - (ease_fn progress) * text_start) + text_x_off
+    text_y = sign_y + ((sign_height - descent) / 2) + text_y_off
+    text_clip = clip sign_x, sign_y, sign_x + lerp_width, sign_y + sign_height
+    main_text = "{#{blur_t}#{pos text_x, text_y}#{text_clip}}#{clean_text}"
+    subs.append with make_basic_line main_text, i_start, i_end, text_style
+      .layer = 2
 
-    -- Calculate the new position
-    factor = pow (t_end - t1) / (t2 - t1), accel
-    new_x = interpolate factor, x1, x2
+make_scale_frames = (subs, f_start, f_end, t_end, sign_width, descent, clean_text, reverse) ->
+  frames = max f_end - f_start - 1, 1
+  for i = 1, frames
+    progress = (if reverse then frames - i else i) / frames
+    i_start = aegisub.ms_from_frame(f_start + i)
+    i_end = if i >= frames and not reverse then t_end else aegisub.ms_from_frame(f_start + i + 1)
 
-    -- Make the new line
-    tag = move(x, y1, new_x, y2, 0, t_end - t_start)
-    new_line = copy_line line
-    new_line.text = "{#{tag}}#{normalize_temp_times line.text, -t_start}"
-    new_line.start_time = line_start + t_start
-    -- Keep the existing duration for the last line
-    new_line.end_time = if i == n then line_end else line_start + t_end
+    -- Scale is interpolated from 1.0 to `scale` (0.85)
+    lerp_scale = 1 - (ease_fn progress) * (1 - scale)
 
-    insert lines, new_line
+    -- When it scales, it also moves slightly to the left and up. Apply an offset
+    all_eased_offset = scale_offset * (ease_fn progress)
 
-    -- Prep for next iteration
-    t_start = t_end
-    x = new_x
+    -- Background rectangle 2 (purple) - starts the same size as bg1, and shrinks to the same size, but also gains an
+    -- offset of `bg2_offset` pixels to the bottom right.
+    bg2_eased_offset = bg2_offset * (ease_fn progress)
+    bg2_rect = rect(
+      sign_x + all_eased_offset + bg2_eased_offset,
+      sign_y + all_eased_offset + bg2_eased_offset,
+      sign_x + (sign_width * lerp_scale) + all_eased_offset + bg2_eased_offset,
+      sign_y + (sign_height * lerp_scale) + all_eased_offset + bg2_eased_offset
+    )
+    -- Also fade in/out the bg2 for a few frames, to hide small scaling artifacts
+    bg2_alpha = if not reverse and i < bg2_fade_f then
+      i / bg2_fade_f
+    else if reverse and i >= frames - bg2_fade_f then
+      (frames - i) / bg2_fade_f
+    else 1
+    bg2_text = "{#{blur_t}#{pos 0, 0}#{alpha_lerp bg2_alpha}\\p1}#{bg2_rect}"
+    subs.append with make_basic_line bg2_text, i_start, i_end, bg2_style
+      .layer = 0
 
-  lines
+    -- Background rectangle 1 (white) - shrink from the top left.
+    bg1_rect = rect(
+      sign_x + all_eased_offset,
+      sign_y + all_eased_offset,
+      sign_x + (sign_width * lerp_scale) + all_eased_offset,
+      sign_y + (sign_height * lerp_scale) + all_eased_offset
+    )
+    bg1_text = "{#{blur_t}#{pos 0, 0}\\p1}#{bg1_rect}"
+    subs.append with make_basic_line bg1_text, i_start, i_end, bg1_style
+      .layer = 1
 
-make_yamaha_sign = (subtitles, selection) ->
-  meta, styles = karaskel.collect_head subtitles
+    -- Text - text is aligned with \an4, so use \fscx and \fscy to scale it, keeping it aligned to the new sign_height
+    text_x = sign_x + pad + (text_x_off * lerp_scale) + all_eased_offset
+    text_y = sign_y + (((sign_height - descent) * lerp_scale) / 2) + text_y_off + all_eased_offset
+    text_scale = lerp_scale * 100
+    main_text = "{#{blur_t}#{pos text_x, text_y}\\fscx#{text_scale}\\fscy#{text_scale}}#{clean_text}"
+    subs.append with make_basic_line main_text, i_start, i_end, text_style
+      .layer = 2
 
+make_yamaha_sign = (subs, selection) ->
+  -- Prepare karaskel stuff
+  meta, styles = karaskel.collect_head subs
+
+  -- Populate line size information
   i = selection[1]
-  line = subtitles[selection[1]]
-  karaskel.preproc_line subtitles, meta, styles, line
+  line = subs[selection[1]]
+  karaskel.preproc_line subs, meta, styles, line
 
-  text_height_base = line.height - line.descent
-
+  text_height_base, descent = line.height - line.descent, line.descent
   sign_width = line.width + 2 * pad
+  clean_text = remove_pos line.text
 
-  -- Background rectangle
-  br1_path = rect 0, 0, sign_width, sign_height
+  t_start, t_end = line.start_time, line.end_time
 
-  -- Largest bounding box for the clips - slightly larger than the rectangle itself to account for the blur
-  br1_clip_x1, br1_clip_x2 = sign_x - blur_pad, sign_x + sign_width + blur_pad
-  br1_clip_y1, br1_clip_y2 = sign_y - blur_pad, sign_y + sign_height + blur_pad
+  subs.delete i -- Remove the existing line
 
-  br1_init_clip = clip br1_clip_x1, br1_clip_y1, br1_clip_x1, br1_clip_y2 -- Same x1, start at 0 width
-  br1_time_strs = [anim_time(t, br1_clip_x1, br1_clip_y1, br1_clip_x2, br1_clip_y2) for t in *br1_times]
-  br1_clips = "#{br1_init_clip}#{concat br1_time_strs, ""}"
+  -- Insert a comment line to mark the start of the sign, with fold data to easily hide it
+  -- (folds require arch1t3cht's Aegisub fork)
+  fold_id = lem.insert_fold_line subs, "Start Yamaha sign: #{clean_text}", t_start, t_end, text_style
 
-  br1 = "{\\blur#{blur}\\p1#{pos sign_x, sign_y}#{normalize_temp_times br1_clips, 0}}#{br1_path}"
+  -- Initial swipe-in animation
+  f_start, f_end = aegisub.frame_from_ms(t_start), aegisub.frame_from_ms(t_start + swipe_time)
+  make_swipe_frames subs, f_start, f_end, sign_width, descent, clean_text
 
-  -- Add the new line before the current one
-  br1_line = copy_line line
-  br1_line.text = br1
-  br1_line.style = "Top box bg1"
-  subtitles[-i] = br1_line
-  i += 1
+  -- The time that the swipe-out animation will play
+  main_end = t_end - swipe_time - scale_time
 
-  -- Reposition the text: start it at 50% of the width of the sign, then move it to the left. Give the text the same
-  -- clips as the background rectangle. Remove existing \pos(...) tags and remaining empty braces ({})
-  text_start_x, text_end_x = sign_x + sign_width / 2, sign_x + pad
-  text_y = sign_y + ((sign_height - line.descent) / 2) + text_y_off
-  clean_text = (line.text\gsub "\\pos%([%d%.]+,%s*[%d%.]+%)", "")\gsub "{}", ""
-  new_text = "{\\blur#{blur}#{br1_clips}}#{clean_text}"
+  -- Shrink animation
+  f_start, f_end = f_end - 1, aegisub.frame_from_ms(t_start + swipe_time + scale_time)
+  make_scale_frames subs, f_start, f_end, main_end, sign_width, descent, clean_text, false
 
-  -- Put the new line text in, then call accel_move to generate multiple lines with the accelerated movement
-  tmp_line = copy_line line
-  tmp_line.text = new_text
-  subtitles.delete(i) -- Remove the existing line
+  -- Expand animation
+  f_start, f_end = aegisub.frame_from_ms(main_end) - 1, aegisub.frame_from_ms(main_end + scale_time)
+  make_scale_frames subs, f_start, f_end, t_end, sign_width, descent, clean_text, true
 
-  new_lines = accel_move tmp_line, text_start_x, text_y, text_end_x, text_y, 0, text_end_time, text_accel, text_move_n
-  subtitles.insert i, unpack(new_lines)
+  -- Final swipe-out animation
+  f_start, f_end = aegisub.frame_from_ms(t_end - swipe_time) - 1, aegisub.frame_from_ms(t_end)
+  make_swipe_frames subs, f_start, f_end, sign_width, descent, clean_text, true
+
+  -- Insert a final comment line to mark the end of the sign, and the ending fold
+  lem.insert_fold_line subs, "End Yamaha sign: #{clean_text}", t_end, t_end, text_style, fold_id
 
   -- Done
   aegisub.set_undo_point script_name
 
-make_yamaha_sign_validation = (subtitles, selection, active) ->
+make_yamaha_sign_validation = (subs, selection, active) ->
   #selection == 1
 
 aegisub.register_macro script_dir .. script_name, script_description, make_yamaha_sign, make_yamaha_sign_validation
-
-
