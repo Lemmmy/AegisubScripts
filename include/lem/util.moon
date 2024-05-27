@@ -71,6 +71,46 @@ make_basic_line = (text, start_time, end_time, style) ->
     .end_time = end_time
     .style = style
 
+make_style = -> {
+  class: "style",
+  section: "[V4+ Styles]",
+
+  name: "Default",
+
+  align: 5,
+  relative_to: 2, -- unsupported
+
+  angle: 0,     -- degrees
+  scale_x: 100, -- percent
+  scale_y: 100, -- percent
+
+  color1: "&H00FFFFFF&", -- primary color
+  color2: "&H000000FF&", -- secondary color (e.g. for karaoke)
+  color3: "&H00000000&", -- outline color
+  color4: "&HB4000000&", -- shadow color
+
+  encoding: 1, -- Windows font encoding ID
+  fontname: "Arial",
+  fontsize: 48,
+
+  margin_b: 0,
+  margin_l: 0,
+  margin_r: 0,
+  margin_t: 0,
+
+  borderstyle: 1, -- 1 for outline + shadow, 3 for opaque box behind subs
+  outline: 0,     -- in pixels
+  shadow: 0,      -- in pixels
+  spacing: 0,     -- in pixels
+
+  bold: false,
+  italic: false,
+  strikeout: false,
+  underline: false,
+
+  extra: {},
+}
+
 --------------------------------------------------------------------------------
 -- Folds
 --------------------------------------------------------------------------------
@@ -118,7 +158,7 @@ insert_fold_line = (subs, text, t_start, t_end, style, fold_id) ->
   :ease_in_out_sine, :ease_in_out_quad, :ease_in_out_cubic, :ease_in_out_quart, :ease_in_out_quint, :ease_in_out_expo,
   :ease_in_out_circ, :cubic_bezier, :ease_yamaha,
 
-  :make_line, :make_basic_line,
+  :make_line, :make_basic_line, :make_style,
 
   :insert_fold_line
 }

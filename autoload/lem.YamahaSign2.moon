@@ -11,17 +11,15 @@ require "karaskel"
 
 lem = require "lem.util"
 { :pos, :rect, :clip, :alpha_lerp, :clean_tags, :remove_pos, :parse_pos, :make_basic_line } = lem
+{ :setup_yamaha_sign } = require "lem.yamaha"
 
 sign_x      = 97
 sign_y      = 165
-sign_height = 109
+def_height  = 109
 pad         = 24
 blur        = 0.6
 blur_t      = "\\blur(#{blur})"
 fsp_start   = 50
-
-bg_style   = "Top box bg1"
-text_style = "Top box text"
 
 swipe_time    = 1200
 text_end_time = 1000
@@ -32,7 +30,7 @@ text_y_off    = 3
 
 ease_fn = lem.ease_yamaha
 
-make_swipe_frames = (subs, f_start, f_end, t_end, sign_width, descent, clean_text, reverse) ->
+make_swipe_frames = (subs, f_start, f_end, t_end, sign_width, descent, clean_text, conf, reverse) ->
   frames = max f_end - f_start - 1, 1
   for i = 1, frames
     progress = (if reverse then frames - i else i) / frames
@@ -42,34 +40,33 @@ make_swipe_frames = (subs, f_start, f_end, t_end, sign_width, descent, clean_tex
     -- Background rectangle - width grows, and moves to the left (centered horizontally)
     lerp_width = (ease_fn progress) * sign_width
     bg_x = sign_x - lerp_width / 2
-    bg_rect = rect bg_x, sign_y, bg_x + lerp_width, sign_y + sign_height
+    bg_rect = rect bg_x, sign_y, bg_x + lerp_width, sign_y + conf.height
     bg_text = "{#{blur_t}#{pos 0, 0}\\p1}#{bg_rect}"
-    subs.append with make_basic_line bg_text, i_start, i_end, bg_style
+    subs.append with make_basic_line bg_text, i_start, i_end, conf.bg1_style
       .layer = 1
 
     -- Text - fades in, centered with the sign, font spacing starts high and decreases
     lerp_fsp = fsp_start - (ease_fn progress) * fsp_start
     alpha = alpha_lerp (ease_fn progress)
     text_x = bg_x - (sign_width - lerp_width) + pad + text_x_off
-    text_y = sign_y + ((sign_height - descent) / 2) + text_y_off
-    text_clip = clip bg_x, sign_y, bg_x + lerp_width, sign_y + sign_height
+    text_y = sign_y + ((conf.height - descent) / 2) + text_y_off
+    text_clip = clip bg_x, sign_y, bg_x + lerp_width, sign_y + conf.height
     main_text = "{#{blur_t}#{pos text_x, text_y}#{text_clip}\\fsp#{lerp_fsp}#{alpha}}#{clean_text}"
-    subs.append with make_basic_line main_text, i_start, i_end, text_style
+    subs.append with make_basic_line main_text, i_start, i_end, conf.text_style
       .layer = 2
 
 make_yamaha_sign = (subs, selection) ->
+  -- Config dialog
+  conf = setup_yamaha_sign subs, def_height
+  return if not conf
+
   -- Prepare karaskel stuff
   meta, styles = karaskel.collect_head subs
 
-  -- Change the style of the line to the text style if it isn't already
-  i = selection[1]
-  line = subs[selection[1]]
-
-  if not line.style\match "^Top box "
-    line.style = text_style
-    subs[selection[1]] = line
-  else
-    text_style = line.style
+  -- Change the style of the line to the text style
+  i = selection[1] + conf.ioff
+  line = with subs[i]
+    .style = conf.text_style
 
   -- Populate line size information
   karaskel.preproc_line subs, meta, styles, line
@@ -90,18 +87,18 @@ make_yamaha_sign = (subs, selection) ->
   subs.delete i -- Remove the existing line
 
   -- Insert a comment line to mark the start of the sign, with fold data to easily hide it
-  fold_id = lem.insert_fold_line subs, "Start Yamaha sign: #{clean_text}", t_start, t_end, text_style
+  fold_id = lem.insert_fold_line subs, "Start Yamaha sign: #{clean_text}", t_start, t_end, conf.text_style
 
   -- Initial swipe-in animation
   f_start, f_end = aegisub.frame_from_ms(t_start), aegisub.frame_from_ms(t_start + swipe_time)
-  make_swipe_frames subs, f_start, f_end, main_end, sign_width, descent, clean_text
+  make_swipe_frames subs, f_start, f_end, main_end, sign_width, descent, clean_text, conf
 
   -- Final swipe-out animation
   f_start, f_end = aegisub.frame_from_ms(t_end - swipe_time) - 1, aegisub.frame_from_ms(t_end)
-  make_swipe_frames subs, f_start, f_end, t_end, sign_width, descent, clean_text, true
+  make_swipe_frames subs, f_start, f_end, t_end, sign_width, descent, clean_text, conf, true
 
   -- Insert a final comment line to mark the end of the sign, and the ending fold
-  lem.insert_fold_line subs, "End Yamaha sign: #{clean_text}", t_end, t_end, text_style, fold_id
+  lem.insert_fold_line subs, "End Yamaha sign: #{clean_text}", t_end, t_end, conf.text_style, fold_id
 
   -- Done
   aegisub.set_undo_point script_name
