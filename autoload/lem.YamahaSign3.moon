@@ -29,7 +29,7 @@ swipe_time    = 1200
 text_end_time = 1000
 text_accel    = 0.4
 text_move_n   = 10
-text_x_off    = -3.5
+text_x_off    = 0
 text_y_off    = 3
 
 ease_fn = lem.ease_yamaha
@@ -63,9 +63,17 @@ make_yamaha_sign = (subs, selection) ->
   -- Prepare karaskel stuff
   meta, styles = karaskel.collect_head subs
 
-  -- Populate line size information
+  -- Change the style of the line to the text style if it isn't already
   i = selection[1]
   line = subs[selection[1]]
+
+  if not line.style\match "^Top box "
+    line.style = text_style
+    subs[selection[1]] = line
+  else
+    text_style = line.style
+
+  -- Populate line size information
   karaskel.preproc_line subs, meta, styles, line
 
   -- Get the x and y position of the sign based on the \pos() tag of the selected line

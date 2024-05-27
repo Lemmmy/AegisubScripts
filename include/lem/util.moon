@@ -1,3 +1,5 @@
+import floor, pow, max, sin, cos, pi, sqrt from math
+
 util = require "aegisub.util"
 require "karaskel"
 
@@ -73,7 +75,7 @@ make_basic_line = (text, start_time, end_time, style) ->
 -- Folds
 --------------------------------------------------------------------------------
 
--- https://github.com/TypesettingTools/arch1t3cht-Aegisub-Scripts/blob/7eac78b382ae93e54e867a7bd95d2de9653c2936/macros/arch.ConvertFolds.moon#L21-L28
+-- https://github.cocom/TypesettingTools/arch1t3cht-Aegisub-Scripts/blob/7eac78b382ae93e54e867a7bd95d2de9653c2936/macros/arch.ConvertFolds.moon#L21-L28
 fold_key = "_aegi_folddata"
 parse_line_fold = (line) ->
   return if not line.extra
