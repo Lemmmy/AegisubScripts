@@ -14,7 +14,7 @@ expected_styles = {
   ["Top box text"]: {
     color1: ass_style_color 34, 34, 34, 0,
     fontname: "Nirmala UI",
-    fontsize: 78,
+    fontsize: 66,
     align: 4,
     bold: true,
   }

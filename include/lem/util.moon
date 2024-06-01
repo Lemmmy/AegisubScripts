@@ -43,6 +43,9 @@ ease_in_out_expo  = (x) -> if x == 0 then 0 else if x == 1 then 1 else if x < 0.
 ease_in_out_circ  = (x) -> if x < 0.5 then (1 - sqrt(1 - pow(2 * x, 2))) / 2 else (sqrt(1 - pow(-2 * x + 2, 2)) + 1) / 2
 ease_yamaha = cubic_bezier 0.6, 0.11, 0.29, 0.81
 
+remap_full = (in_min, in_max, out_min, out_max, x) -> (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+remap = (out_min, out_max, x) -> remap_full 0, 1, out_min, out_max, x
+
 --------------------------------------------------------------------------------
 -- Lines
 --------------------------------------------------------------------------------
@@ -156,7 +159,7 @@ insert_fold_line = (subs, text, t_start, t_end, style, fold_id) ->
   :clean_tags, :remove_pos, :parse_pos,
 
   :ease_in_out_sine, :ease_in_out_quad, :ease_in_out_cubic, :ease_in_out_quart, :ease_in_out_quint, :ease_in_out_expo,
-  :ease_in_out_circ, :cubic_bezier, :ease_yamaha,
+  :ease_in_out_circ, :cubic_bezier, :ease_yamaha, :remap_full, :remap,
 
   :make_line, :make_basic_line, :make_style,
 

@@ -14,8 +14,8 @@ lem = require "lem.util"
 { :setup_yamaha_sign } = require "lem.yamaha"
 
 sign_x      = 97
-sign_y      = 165
-def_height  = 92
+sign_y      = 155
+def_height  = 80
 pad         = 16
 blur        = 0.6
 blur_t      = "\\blur(#{blur})"
