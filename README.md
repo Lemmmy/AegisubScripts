@@ -24,6 +24,8 @@ Does not abide by collision detection, so if the chorus lines appear alongside o
 # Repetition
 Given a selection of lines, duplicates the text of the first one, with `x2`, `x3`, etc. appended as alpha timing to each line.
 
+https://github.com/Lemmmy/AegisubScripts/assets/858456/78fae7bc-19a7-42d6-bfdb-d28bf9c9fa40
+
 # Script Styles
 Populates styles for selected lines based on actor names at the start of each line.
 
