@@ -29,6 +29,11 @@ parse_pos = (text) ->
   else
     return nil, nil
 
+-- Same as parse_pos, but returns 0, 0 if no \pos tag is found
+parse_pos_zero = (text) ->
+  x, y = parse_pos text
+  return x or 0, y or 0
+
 --------------------------------------------------------------------------------
 -- Easing
 --------------------------------------------------------------------------------
@@ -156,7 +161,7 @@ insert_fold_line = (subs, text, t_start, t_end, style, fold_id) ->
 {
   :pos, :rect, :clip, :alpha_lerp,
 
-  :clean_tags, :remove_pos, :parse_pos,
+  :clean_tags, :remove_pos, :parse_pos, :parse_pos_zero,
 
   :ease_in_out_sine, :ease_in_out_quad, :ease_in_out_cubic, :ease_in_out_quart, :ease_in_out_quint, :ease_in_out_expo,
   :ease_in_out_circ, :cubic_bezier, :ease_yamaha, :remap_full, :remap,
