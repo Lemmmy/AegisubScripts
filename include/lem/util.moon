@@ -2,6 +2,7 @@ import floor, pow, max, sin, cos, pi, sqrt from math
 
 util = require "aegisub.util"
 require "karaskel"
+require "json"
 
 --------------------------------------------------------------------------------
 -- ASS tags
@@ -155,6 +156,26 @@ insert_fold_line = (subs, text, t_start, t_end, style, fold_id) ->
   fold_id
 
 --------------------------------------------------------------------------------
+-- Configs
+--------------------------------------------------------------------------------
+config_base = "?user/config"
+
+load_config = (config_name) ->
+  config = {}
+  config_path = aegisub.decode_path "#{config_base}/#{config_name}.json"
+  file = io.open config_path, "r"
+  if file
+    config = json.decode file\read "*a"
+    file\close!
+  config
+
+save_config = (config_name, config) ->
+  config_path = aegisub.decode_path "#{config_base}/#{config_name}.json"
+  file = io.open config_path, "w"
+  file\write json.encode config
+  file\close!
+
+--------------------------------------------------------------------------------
 -- Returns
 --------------------------------------------------------------------------------
 
@@ -168,5 +189,7 @@ insert_fold_line = (subs, text, t_start, t_end, style, fold_id) ->
 
   :make_line, :make_basic_line, :make_style,
 
-  :insert_fold_line
+  :insert_fold_line,
+
+  :load_config, :save_config,
 }

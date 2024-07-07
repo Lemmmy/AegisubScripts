@@ -21,6 +21,9 @@ Does not abide by collision detection, so if the chorus lines appear alongside o
 
 ![image](https://github.com/Lemmmy/AegisubScripts/assets/858456/45593197-e17a-4d61-a1bd-b48172935867)
 
+# Line Spacing
+For lines already split by `\N`, splits them into separate dialogue lines with their own `\pos()` tags, and adjusts the vertical spacing between them by the specified amount. Currently only works with middle aligned lines (`\an4`, `\an5`, and `\an6`).
+
 # Repetition
 Given a selection of lines, duplicates the text of the first one, with `x2`, `x3`, etc. appended as alpha timing to each line.
 
