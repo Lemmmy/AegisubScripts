@@ -24,6 +24,11 @@ Does not abide by collision detection, so if the chorus lines appear alongside o
 # Line Spacing
 For lines already split by `\N`, splits them into separate dialogue lines with their own `\pos()` tags, and adjusts the vertical spacing between them by the specified amount. Currently only works with middle aligned lines (`\an4`, `\an5`, and `\an6`).
 
+# Mask Sign
+Toggles selected lines to being red + transparent - useful for repositioning signs in cases where it's faster than redoing mocap. Original `\c` and `\alpha` tags are preserved.
+
+![image](https://github.com/user-attachments/assets/3a1b63d6-22b9-4a84-8342-972cc1cf2a46)
+
 # Repetition
 Given a selection of lines, duplicates the text of the first one, with `x2`, `x3`, etc. appended as alpha timing to each line.
 
