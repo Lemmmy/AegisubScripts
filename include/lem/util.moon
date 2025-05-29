@@ -35,6 +35,18 @@ parse_pos_zero = (text) ->
   x, y = parse_pos text
   return x or 0, y or 0
 
+alignments = {
+  bottom_left: 1
+  bottom_center: 2
+  bottom_right: 3
+  center_left: 4
+  center: 5
+  center_right: 6
+  top_left: 7
+  top_center: 8
+  top_right: 9
+}
+
 --------------------------------------------------------------------------------
 -- Easing
 --------------------------------------------------------------------------------
@@ -67,6 +79,8 @@ make_line = -> {
   margin_l: 0,
   margin_r: 0,
   margin_t: 0,
+  margin_b: 0,
+  margin_v: 0,
   section: "[Events]",
   style: "Default",
   text: "",
@@ -181,6 +195,8 @@ save_config = (config_name, config) ->
 
 {
   :pos, :rect, :clip, :alpha_lerp,
+
+  :alignments,
 
   :clean_tags, :remove_pos, :parse_pos, :parse_pos_zero,
 
