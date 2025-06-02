@@ -1,5 +1,5 @@
 require "karaskel"
-{ :make_style } = require "lem.util"
+{ :make_style, :load_config, :save_config } = require "lem.util"
 
 import insert from table
 
@@ -20,7 +20,25 @@ expected_styles = {
   }
 }
 
-setup_yamaha_sign = (subs, default_height) ->
+-- Default configuration values
+DEFAULT_CONFIG = {
+  sign_x: 97
+  sign_y: 155
+  blur: 0.6
+  height: 80
+}
+
+-- Load config from disk or use defaults
+get_config = ->
+  config = load_config "yamaha"
+
+  -- Ensure all default values exist
+  for k, v in pairs DEFAULT_CONFIG
+    config[k] = config[k] or v
+
+  config
+
+setup_yamaha_sign = (subs) ->
   -- Obtain the styles from the script
   meta, styles = karaskel.collect_head subs
 
@@ -45,6 +63,9 @@ setup_yamaha_sign = (subs, default_height) ->
   for i = 1, styles.n do
     table.insert style_items, styles[i].name
 
+  -- Load saved configuration
+  config = get_config()
+
   dialog_config = {
     -- bg1
     { class: "label", label: "bg1 style", x: 0, y: 0, width: 1 },
@@ -57,11 +78,24 @@ setup_yamaha_sign = (subs, default_height) ->
     { class: "dropdown", items: style_items, name: "text_style", value: "Top box text", x: 1, y: 2, width: 2 },
     -- height
     { class: "label", label: "height", x: 0, y: 3, width: 1 },
-    { class: "floatedit", name: "height", x: 1, y: 3, width: 2, value: default_height, min: 0, max: 1000, step: 1 }
+    { class: "floatedit", name: "height", x: 1, y: 3, width: 2, value: config.height, min: 0, max: 1000, step: 1 },
+    -- sign_x
+    { class: "label", label: "sign_x", x: 0, y: 4, width: 1 },
+    { class: "floatedit", name: "sign_x", x: 1, y: 4, width: 2, value: config.sign_x, min: 0, max: 4000, step: 1 },
+    -- sign_y
+    { class: "label", label: "sign_y", x: 0, y: 5, width: 1 },
+    { class: "floatedit", name: "sign_y", x: 1, y: 5, width: 2, value: config.sign_y, min: 0, max: 4000, step: 1 },
+    -- blur
+    { class: "label", label: "blur", x: 0, y: 6, width: 1 },
+    { class: "floatedit", name: "blur", x: 1, y: 6, width: 2, value: config.blur, min: 0, max: 10, step: 0.1 }
   }
 
-  btn, result = aegisub.dialog.display dialog_config, { "Ok", "Repop styles", "Cancel" }
+  btn, result = aegisub.dialog.display dialog_config, { "Ok", "Defaults", "Repop styles", "Cancel" }
   switch btn
+    when "Defaults"
+      config = DEFAULT_CONFIG
+      save_config "yamaha", config
+      nil
     when "Repop styles"
       aegisub.set_undo_point "Create Yamaha styles"
       nil
@@ -69,7 +103,20 @@ setup_yamaha_sign = (subs, default_height) ->
       aegisub.cancel!
       nil
     when "Ok" then
+      -- Save configuration
+      config = {
+        height: result.height
+        sign_x: result.sign_x
+        sign_y: result.sign_y
+        blur: result.blur
+      }
+      save_config "yamaha", config
+
       with result
         .ioff = ioff
+        .height = config.height
+        .sign_x = config.sign_x
+        .sign_y = config.sign_y
+        .blur = config.blur
 
-{ :setup_yamaha_sign }
+{ :setup_yamaha_sign, :get_config }

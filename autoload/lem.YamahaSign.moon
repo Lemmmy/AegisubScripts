@@ -11,15 +11,9 @@ require "karaskel"
 
 lem = require "lem.util"
 { :pos, :rect, :clip, :alpha_lerp, :clean_tags, :remove_pos, :make_basic_line } = lem
-{ :setup_yamaha_sign } = require "lem.yamaha"
+{ :setup_yamaha_sign, :get_config } = require "lem.yamaha"
 
-sign_x      = 97
-sign_y      = 155
-def_height  = 80
-pad         = 16
-blur        = 0.6
-blur_t      = "\\blur(#{blur})"
-
+pad           = 16
 swipe_time    = 1200
 text_end_time = 1000
 text_accel    = 0.4
@@ -35,6 +29,10 @@ bg2_fade_f    = 5 -- number of frames to fade bg2 in/out for
 ease_fn = lem.ease_yamaha
 
 make_swipe_frames = (subs, f_start, f_end, sign_width, descent, clean_text, conf, reverse) ->
+  sign_x = conf.sign_x
+  sign_y = conf.sign_y
+  blur_t = "\\blur(#{conf.blur})"
+
   frames = max f_end - f_start - 1, 1
   for i = 1, frames
     progress = (if reverse then frames - i else i) / frames
@@ -57,6 +55,10 @@ make_swipe_frames = (subs, f_start, f_end, sign_width, descent, clean_text, conf
       .layer = 2
 
 make_scale_frames = (subs, f_start, f_end, t_end, sign_width, descent, clean_text, conf, reverse) ->
+  sign_x = conf.sign_x
+  sign_y = conf.sign_y
+  blur_t = "\\blur(#{conf.blur})"
+
   frames = max f_end - f_start - 1, 1
   for i = 1, frames
     progress = (if reverse then frames - i else i) / frames
@@ -109,7 +111,7 @@ make_scale_frames = (subs, f_start, f_end, t_end, sign_width, descent, clean_tex
 
 make_yamaha_sign = (subs, selection) ->
   -- Config dialog
-  conf = setup_yamaha_sign subs, def_height
+  conf = setup_yamaha_sign subs
   return if not conf
 
   -- Prepare karaskel stuff
