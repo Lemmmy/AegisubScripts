@@ -146,9 +146,10 @@ script_inserter_macro = (marker, skip) ->
       return
 
     -- Change the text of the selected line to the next line in the file
-    existing_line = subs[selection[1]]
-    existing_line.text = next_line
-    subs[selection[1]] = existing_line
+    if marker != "[S]"
+      existing_line = subs[selection[1]]
+      existing_line.text = next_line
+      subs[selection[1]] = existing_line
 
     -- Update the inserted line in the file
     update_inserted_line path, next_line_n, marker
