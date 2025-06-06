@@ -39,6 +39,31 @@ Given a selection of lines, duplicates the text of the first one, with `x2`, `x3
 
 https://github.com/Lemmmy/AegisubScripts/assets/858456/78fae7bc-19a7-42d6-bfdb-d28bf9c9fa40
 
+# Script Inserter
+Group of macros that allows you to populate the script with dialogue from a specified file while timing.
+
+This assumes you have a script that looks like this:
+```
+TOYOTA: Hello!
+KUROSAWA: Hello!
+MINAMIYA: Hello!
+MINAMIYA: I'll be your guide for the tour of the Yamaha Toyooka factory today.
+```
+Any lines that don't match the format `SPEAKER: Text` will be skipped.
+
+First, run the configuration script (`Script inserter config`) to specify the location of the script file. By default
+it will use `?script/script.md`.
+
+Next, run the `Script inserter insert` macro to insert the next line from the file into the script. It will update the
+original script file with a `[D]` marker at the start of the line to indicate it has been inserted.
+
+You can also run `Script inserter insert next` to insert the second available line instead of the first one.
+
+Or you can run `Script inserter skip` to skip the next line in the file (by marking it with `[S]` instead of `[D]`).
+
+By binding these macros to hotkeys, e.g. the numbers 1, 2, 3 in the `Audio` hotkey group, you can insert lines while
+timing—place the audio, then press `1` before pressing `G`.
+
 # Script Styles
 Populates styles for selected lines based on actor names at the start of each line.
 
