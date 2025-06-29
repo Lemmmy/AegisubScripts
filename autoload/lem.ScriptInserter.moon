@@ -42,7 +42,7 @@ read_next_line = (path, skip) ->
 
   f, err = io.open path, "r"
   if not f
-    aegisub.message.error "Failed to open file: #{err}"
+    aegisub.debug.out "Failed to open file: #{err}"
     return
 
   for line in f\lines!
@@ -71,7 +71,7 @@ update_inserted_line = (path, line_n, marker) ->
 
   f, err = io.open path, "r"
   if not f
-    aegisub.message.error "Failed to open file: #{err}"
+    aegisub.debug.out "Failed to open file: #{err}"
     return
 
   for line in f\lines!
@@ -86,7 +86,7 @@ update_inserted_line = (path, line_n, marker) ->
     -- Write all lines back to the file
     f, err = io.open path, "w"
     if not f
-      aegisub.message.error "Failed to open file: #{err}"
+      aegisub.debug.out "Failed to open file: #{err}"
       return
 
     for _, line in ipairs lines
@@ -113,7 +113,7 @@ script_inserter_config = (subs, selection) ->
   path = aegisub.decode_path result.path
   next_line, next_line_n = read_next_line path
   if not next_line
-    aegisub.message.error "File does not exist or has no readable/remaining dialogue lines"
+    aegisub.debug.out "File does not exist or has no readable/remaining dialogue lines"
     return
 
   -- Save the configuration to the top of the script
@@ -137,12 +137,12 @@ script_inserter_macro = (marker, skip) ->
   (subs, selection) ->
     path, _, _ = get_configured_path subs
     if not path
-      aegisub.message.error "No path configured"
+      aegisub.debug.out "No path configured"
       return
 
     next_line, next_line_n = read_next_line path, skip
     if not next_line
-      aegisub.message.error "No readable/remaining dialogue lines"
+      aegisub.debug.out "No readable/remaining dialogue lines"
       return
 
     -- Change the text of the selected line to the next line in the file
